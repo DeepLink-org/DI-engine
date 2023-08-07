@@ -1,4 +1,14 @@
 import gym
+
+
+one_iter_tool_package = "diengine"
+from capture import insert_capture
+import os
+try:
+    import torch_dipu
+except:
+    pass
+
 from ditk import logging
 from ding.model import VAC
 from ding.policy import PPOPolicy
@@ -16,7 +26,15 @@ from dizoo.classic_control.cartpole.config.cartpole_ppo_config import main_confi
 def main():
     logging.getLogger().setLevel(logging.INFO)
     cfg = compile_config(main_config, create_cfg=create_config, auto=True)
+
+    if( os.getenv('ONE_ITER_TOOL_DEVICE', None) != "cpu"):
+        cfg['policy']['cuda']=True
+    else:
+        cfg['policy']['cuda']=False
+    cfg['seed']=5
+
     ding_init(cfg)
+
     with task.start(async_mode=False, ctx=OnlineRLContext()):
         collector_env = BaseEnvManagerV2(
             env_fn=[lambda: DingEnvWrapper(gym.make("CartPole-v0")) for _ in range(cfg.env.collector_env_num)],
@@ -31,6 +49,8 @@ def main():
 
         model = VAC(**cfg.policy.model)
         policy = PPOPolicy(cfg.policy, model=model)
+
+        insert_capture(policy)
 
         task.use(interaction_evaluator(cfg, policy.eval_mode, evaluator_env))
         task.use(StepCollector(cfg, policy.collect_mode, collector_env))

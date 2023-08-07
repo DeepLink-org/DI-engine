@@ -1,3 +1,12 @@
+
+one_iter_tool_package = "diengine"
+from capture import insert_capture
+import os
+try:
+    import torch_dipu
+except:
+    pass
+
 from ditk import logging
 from ding.model import QAC
 from ding.policy import SACPolicy
@@ -16,6 +25,14 @@ from dizoo.classic_control.pendulum.config.pendulum_sac_config import main_confi
 def main():
     logging.getLogger().setLevel(logging.INFO)
     cfg = compile_config(main_config, create_cfg=create_config, auto=True)
+
+    if( os.getenv('ONE_ITER_TOOL_DEVICE', None) != "cpu"):
+        cfg['policy']['cuda']=True
+    else:
+        cfg['policy']['cuda']=False
+    cfg['seed']=5
+
+
     ding_init(cfg)
     with task.start(async_mode=False, ctx=OnlineRLContext()):
         collector_env = BaseEnvManagerV2(
@@ -30,6 +47,8 @@ def main():
         model = QAC(**cfg.policy.model)
         buffer_ = DequeBuffer(size=cfg.policy.other.replay_buffer.replay_buffer_size)
         policy = SACPolicy(cfg.policy, model=model)
+
+        insert_capture(policy)
 
         task.use(interaction_evaluator(cfg, policy.eval_mode, evaluator_env))
         task.use(
