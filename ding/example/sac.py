@@ -48,7 +48,7 @@ def main():
         buffer_ = DequeBuffer(size=cfg.policy.other.replay_buffer.replay_buffer_size)
         policy = SACPolicy(cfg.policy, model=model)
 
-        insert_capture(policy)
+        insert_capture(policy, collector_env, evaluator_env, cfg)
 
         task.use(interaction_evaluator(cfg, policy.eval_mode, evaluator_env))
         task.use(

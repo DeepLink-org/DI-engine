@@ -27,11 +27,11 @@ def main():
     logging.getLogger().setLevel(logging.INFO)
     cfg = compile_config(main_config, create_cfg=create_config, auto=True)
 
-    if( os.getenv('ONE_ITER_TOOL_DEVICE', None) != "cpu"):
-        cfg['policy']['cuda']=True
+    if (os.getenv('ONE_ITER_TOOL_DEVICE', None) != "cpu"):
+        cfg['policy']['cuda'] = True
     else:
-        cfg['policy']['cuda']=False
-    cfg['seed']=5
+        cfg['policy']['cuda'] = False
+    cfg['seed'] = 5
 
     ding_init(cfg)
 
@@ -50,7 +50,7 @@ def main():
         model = VAC(**cfg.policy.model)
         policy = PPOPolicy(cfg.policy, model=model)
 
-        insert_capture(policy)
+        insert_capture(policy, collector_env, evaluator_env, cfg)
 
         task.use(interaction_evaluator(cfg, policy.eval_mode, evaluator_env))
         task.use(StepCollector(cfg, policy.collect_mode, collector_env))
